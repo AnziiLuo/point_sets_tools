@@ -192,7 +192,7 @@ class SNT:
 
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     img_path = os.path.join(base_dir, "test/stn_test.jpg")
     y = SNT(
         image_path=img_path,
@@ -203,6 +203,6 @@ if __name__ == "__main__":
         ),
     ).transform()
     plt.imshow(y[0])
-    plt.show()
+    # plt.show()
     save_path = os.path.join(base_dir, "test/stn_test_res.png")
     plt.savefig(save_path)

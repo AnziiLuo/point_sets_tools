@@ -4,6 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+numpy = "*"
+opencv-contrib-python = "*"
+opencv-python = "*"
+tensorflow = "==2.5.0"
+matplotlib = "*"
 
 [dev-packages]
 
