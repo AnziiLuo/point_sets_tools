@@ -6,6 +6,7 @@
 @Describe: 输入数据转换网络
 @Date: 2021/6/30
 """
+import h5py
 
 import tensorflow as tf
 
@@ -17,8 +18,8 @@ def input_transform_net(point_cloud: tf.Tensor, out_dim=3):
     :param out_dim: 输出维度 3*out_dim
     :return:
     """
-    batch_size = point_cloud.get_shape()[0].value
-    num_point = point_cloud.get_shape()[1].value
+    batch_size = point_cloud.get_shape()[0]
+    num_point = point_cloud.get_shape()[1]
 
     # 为进行卷积计算，扩充一个维度
     input_image = tf.expand_dims(input=point_cloud, axis=-1)
@@ -27,14 +28,14 @@ def input_transform_net(point_cloud: tf.Tensor, out_dim=3):
         filters=64, kernel_size=[1, 3], strides=[1, 1], padding="valid"
     )(input_image)
     net = tf.keras.layers.Conv2D(
-        filters=128, kernel_size=[1, 3], strides=[1, 1], padding="valid"
+        filters=128, kernel_size=[1, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.keras.layers.Conv2D(
-        filters=1024, kernel_size=[1, 3], strides=[1, 1], padding="valid"
+        filters=1024, kernel_size=[1, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.keras.layers.MaxPooling2D(
         pool_size=[num_point, 1], strides=[2, 2], padding="valid"
-    )
+    )(net)
     net = tf.reshape(net, [batch_size, -1])
     net = tf.keras.layers.Dense(
         units=512,
@@ -55,9 +56,20 @@ def input_transform_net(point_cloud: tf.Tensor, out_dim=3):
     biases = tf.Variable(
         initial_value=initializer(shape=(3 * out_dim)), name="biases", dtype=tf.float32
     )
-    biases += tf.constant([1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=tf.float32)
+    biases = biases.assign_add(
+        tf.constant([1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=tf.float32)
+    )
     transform = tf.matmul(net, weights)
     transform = tf.nn.bias_add(transform, biases)
     transform = tf.reshape(transform, [batch_size, 3, out_dim])
 
     return transform
+
+
+if __name__ == "__main__":
+    h5_filename = "../data/ply_data_train0.h5"
+    f = h5py.File(h5_filename)
+    data = f["data"][:3]
+    point_cloud_data = tf.constant(data)
+    transform_res = input_transform_net(point_cloud=point_cloud_data)
+    print(transform_res)
