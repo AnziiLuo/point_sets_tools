@@ -36,7 +36,7 @@ def input_transform_net(point_cloud: tf.Tensor, out_dim=3):
         filters=1024, kernel_size=[1, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.keras.layers.MaxPooling2D(
-        pool_size=[num_point, 1], strides=[2, 2], padding="valid"
+        pool_size=[num_point, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.reshape(net, [batch_size, -1])
     net = tf.keras.layers.Dense(
@@ -88,7 +88,7 @@ def feature_transform_net(input_data: tf.Tensor, out_dim=64):
         filters=1024, kernel_size=[1, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.keras.layers.MaxPooling2D(
-        pool_size=[num_point, 1], strides=[2, 2], padding="valid"
+        pool_size=[num_point, 1], strides=[1, 1], padding="valid"
     )(net)
     net = tf.reshape(net, [batch_size, -1])
     net = tf.keras.layers.Dense(
