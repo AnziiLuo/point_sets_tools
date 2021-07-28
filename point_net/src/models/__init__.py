@@ -6,3 +6,4 @@
 @Describe: 
 @Date: 2021/6/30
 """
+from .pointnet_cls import PointNetModel

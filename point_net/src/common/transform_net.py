@@ -8,6 +8,7 @@
 """
 import h5py
 
+import numpy as np
 import tensorflow as tf
 
 
@@ -49,15 +50,18 @@ def input_transform_net(point_cloud: tf.Tensor, out_dim=3):
         activation=tf.nn.relu,
         kernel_initializer=tf.keras.initializers.GlorotUniform(),
     )(net)
-    initializer = tf.keras.initializers.constant(0.0)
+    initializer = tf.keras.initializers.Constant(0.0)
     weights = tf.Variable(
         initial_value=initializer(shape=(256, 3 * out_dim)),
-        name="weights",
+        name="weights_input",
         dtype=tf.float32,
     )
     biases = tf.Variable(
-        initial_value=initializer(shape=(3 * out_dim)), name="biases", dtype=tf.float32
+        initial_value=initializer(shape=(3 * out_dim, 1)),
+        name="biases_input",
+        dtype=tf.float32,
     )
+    biases = tf.Variable(tf.squeeze(biases, axis=[1]))
     biases = biases.assign_add(
         tf.constant([1, 0, 0, 0, 1, 0, 0, 0, 1], dtype=tf.float32)
     )
@@ -104,16 +108,17 @@ def feature_transform_net(input_data: tf.Tensor, out_dim=64):
     initializer = tf.keras.initializers.constant(0.0)
     weights = tf.Variable(
         initial_value=initializer(shape=(256, out_dim * out_dim)),
-        name="weights",
+        name="weights_feature",
         dtype=tf.float32,
     )
     biases = tf.Variable(
-        initial_value=initializer(shape=(out_dim * out_dim)),
-        name="biases",
+        initial_value=initializer(shape=(out_dim * out_dim, 1)),
+        name="biases_feature",
         dtype=tf.float32,
     )
+    biases = tf.Variable(tf.squeeze(biases, axis=[1]))
     biases = biases.assign_add(
-        tf.constant(tf.reshape(tf.eye(out_dim), -1), dtype=tf.float32)
+        tf.constant(np.reshape(np.eye(out_dim), -1), dtype=tf.float32)
     )
     transform = tf.matmul(net, weights)
     transform = tf.nn.bias_add(transform, biases)

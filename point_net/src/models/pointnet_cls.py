@@ -6,19 +6,17 @@
 @Describe: 
 @Date: 2021/6/30
 """
+from abc import ABC
+
 import h5py
 import tensorflow as tf
 
 from src.common import input_transform_net, feature_transform_net
 
 
-class PointNetModel:
-    def __init__(self, point_cloud: tf.Tensor):
-        self.point_cloud = point_cloud
-
-    def get_model(self):
-        batch_size = self.point_cloud.get_shape()[0]
-        num_point = self.point_cloud.get_shape()[1]
+class PointNetModel(tf.keras.Model, ABC):
+    def __init__(self, **kwargs):
+        super(PointNetModel, self).__init__(**kwargs)
 
         # 输入点云转换
         transform = input_transform_net(point_cloud=self.point_cloud, out_dim=3)
@@ -70,14 +68,37 @@ class PointNetModel:
             activation=tf.nn.relu,
             kernel_initializer=tf.keras.initializers.GlorotUniform(),
         )(net)
+        self.pre = net
 
-        return net
+    def call(self, point_cloud, training=None, mask=None):
+        batch_size = self.point_cloud.get_shape()[0]
+        num_point = self.point_cloud.get_shape()[1]
+
+    @tf.function
+    def get_loss(self, labels):
+        """
+        计算准确率
+        :param labels:
+        :return:
+        """
+        loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            logits=self.pre, labels=labels
+        )
+        classify_loss = tf.reduce_mean(loss)
+
+        return classify_loss
 
 
 if __name__ == "__main__":
+    import numpy as np
+
+    index = 2
     h5_filename = "../data/ply_data_train0.h5"
     f = h5py.File(h5_filename)
-    data = f["data"][:1]
+    data = f["data"][:index]
+    label = [np.int(x) for x in (tf.reshape(f["label"][:index], -1))]
+    label = tf.constant(label)
     point_cloud_data = tf.constant(data)
-    res = PointNetModel(point_cloud=point_cloud_data).get_model()
-    print(res)
+    point_net_model = PointNetModel(point_cloud=point_cloud_data)
+    loss = point_net_model.get_loss(labels=label)
+    # # print(loss)
